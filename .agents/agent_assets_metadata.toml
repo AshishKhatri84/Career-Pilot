@@ -1,0 +1,14 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "BmOz0_4XjoUIhvfxMjPZ7"
+uri = "file://README.md"
+type = "text"
+title = "README.md — Updated"
+
+[[outputs]]
+id = "fr2VKK_NZRIuRaZL3e4N6"
+uri = "file://FEATURES.md"
+type = "text"
+title = "FEATURES.md — Full Feature Guide"

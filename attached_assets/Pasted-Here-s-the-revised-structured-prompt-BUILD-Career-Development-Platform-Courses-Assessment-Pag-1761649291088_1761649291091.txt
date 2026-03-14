@@ -1,0 +1,63 @@
+Here's the revised structured prompt:
+
+BUILD: Career Development Platform - Courses & Assessment Pages
+You are building a career development web application. Create two fully functional, modern web pages using React, Tailwind CSS, and the available component libraries.
+
+REQUIREMENTS
+Page 1: Courses Discovery Platform
+Objective: Create an interactive courses aggregator that displays multiple learning platforms and allows users to explore courses by topics.
+Core Functionality:
+
+Display 8 major learning platforms in a responsive grid: Coursera, Udemy, Simplilearn, Great Learning, Upgrad, edX, Pluralsight, LinkedIn Learning
+Each platform card shows 6-8 popular career topics as clickable tags (Data Science, Machine Learning, Web Development, AI, Cloud Computing, Cybersecurity, etc.)
+Clicking a topic tag opens that platform's search results in a new tab
+Include search functionality to filter platforms and topics
+Add filter dropdowns for Category, Difficulty Level, and Platform Type
+
+UI/UX Requirements:
+
+Modern card-based grid layout (3-4 columns desktop, 1-2 mobile)
+Smooth hover effects and transitions
+Platform logos/icons using lucide-react
+Color-coded topic tags by category
+Responsive design for all screen sizes
+Clean, professional aesthetic with good spacing
+
+
+Page 2: Multi-Level Assessment System
+Objective: Build a comprehensive skills assessment platform with three difficulty levels, automated evaluation, and intelligent course recommendations.
+Assessment Levels:
+Level 1: Easy Quiz (5-10 questions)
+
+Google Forms-style quiz interface within the website
+Simple, clean single-page quiz format
+Question types: Multiple choice (4 options each)
+Display one question at a time with "Next" button OR show all questions on one scrollable page
+Progress indicator showing question count (e.g., "Question 3 of 8")
+Submit button at the end
+Auto-graded with instant results
+Minimum 60% to pass
+Show correct/incorrect answers after submission
+
+Level 2: Medium - Practical Implementation (Task Submission)
+
+Display clear task description/requirements in a card
+Specify accepted file formats (e.g., .py, .ipynb, .zip, .pdf)
+File upload interface with drag-and-drop support
+Show uploaded file name and size
+"Submit for Evaluation" button
+After submission, show:
+
+"Submitted successfully" message
+"AI is evaluating your submission..." loading state
+Simulated evaluation results after 2-3 seconds with score breakdown:
+
+Dataset handling: X/15 points
+Methodology/implementation: X/20 points
+Results/accuracy: X/15 points
+Total: X/50 points
+
+
+
+
+Minimum 60% to pass (30/50)

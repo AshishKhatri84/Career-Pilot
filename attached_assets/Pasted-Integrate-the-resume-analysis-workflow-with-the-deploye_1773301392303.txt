@@ -1,0 +1,263 @@
+Integrate the resume analysis workflow with the deployed n8n webhook and implement the results UI.
+
+The system must allow a user to upload a resume (PDF or TXT), send it to the webhook, process the response, and display job matches in a modal popup with cards.
+
+Do not change the current project architecture. Only add the integration and UI.
+
+------------------------------------------------
+
+WEBHOOK DETAILS
+
+Webhook URL:
+
+https://n8n-workflow-i5z9.onrender.com/webhook/resume-upload
+
+Request Method:
+
+POST
+
+Content-Type:
+
+application/json
+
+------------------------------------------------
+
+REQUEST BODY FORMAT
+
+The webhook expects this exact JSON structure:
+
+{
+  "fileName": "resume.pdf",
+  "fileBase64": "BASE64_STRING"
+}
+
+fileName must be the uploaded file name.
+
+fileBase64 must be the Base64 content of the file without the data prefix.
+
+Example conversion:
+
+reader.result.split(",")[1]
+
+------------------------------------------------
+
+IMPLEMENT FILE BASE64 CONVERSION
+
+Create this helper function:
+
+function convertToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      const base64 = reader.result.split(",")[1];
+      resolve(base64);
+    };
+
+    reader.onerror = reject;
+
+    reader.readAsDataURL(file);
+  });
+}
+
+------------------------------------------------
+
+WEBHOOK REQUEST FUNCTION
+
+Create the function:
+
+async function sendResumeToWorkflow(file) {
+
+  const base64 = await convertToBase64(file);
+
+  const response = await fetch(
+    "https://n8n-workflow-i5z9.onrender.com/webhook/resume-upload",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        fileName: file.name,
+        fileBase64: base64
+      })
+    }
+  );
+
+  const result = await response.json();
+
+  return result;
+}
+
+------------------------------------------------
+
+UPLOAD FLOW
+
+When the user uploads a resume:
+
+1. Convert file to Base64
+2. Send POST request to the webhook
+3. Wait for JSON response
+4. Display results in a modal popup
+
+------------------------------------------------
+
+LOADING PIPELINE UI
+
+Before showing results, display a pipeline progress UI.
+
+Show these steps sequentially:
+
+Uploading resume
+Processing document
+Analyzing skills
+Matching jobs
+Generating results
+
+Show a clean animated step indicator.
+
+------------------------------------------------
+
+RESPONSE FORMAT
+
+The webhook returns:
+
+{
+  "total_jobs_analyzed": number,
+  "top_matches": [
+    {
+      "job_title": string,
+      "match_percentage": number,
+      "required_skills_present": string[],
+      "skill_gaps": string[],
+      "overall_assessment": string
+    }
+  ]
+}
+
+Only display the first 4 matches.
+
+------------------------------------------------
+
+RESULTS DISPLAY
+
+After results arrive:
+
+Open a centered modal popup.
+
+Title:
+
+Analysis Results
+
+Subtitle:
+
+We've analyzed your profile against {total_jobs_analyzed} roles. Here are your top matches.
+
+------------------------------------------------
+
+CARD GRID
+
+Inside the modal display the results as a 2x2 grid of cards.
+
+Each card should contain:
+
+Job Title
+
+Match Score (percentage)
+
+Skills Present (tag pills)
+
+Skill Gaps (tag pills)
+
+Overall Assessment text
+
+------------------------------------------------
+
+CARD STYLE
+
+Cards should have:
+
+rounded corners
+subtle shadow
+modern dashboard style
+
+Match percentage colors:
+
+Green = high score
+Orange = lower score
+
+Skill tags should appear as small rounded pills.
+
+------------------------------------------------
+
+TOP MATCH HIGHLIGHT
+
+Highlight the best match card.
+
+Add label:
+
+TOP MATCH
+
+------------------------------------------------
+
+MODAL FOOTER
+
+Below the cards add a centered button.
+
+Button text:
+
+View Job Openings
+
+Click action:
+
+navigate user to
+
+/careers
+
+------------------------------------------------
+
+MODAL CONTROLS
+
+Add a close button (top right corner).
+
+Closing the modal returns user to the upload page.
+
+------------------------------------------------
+
+ERROR HANDLING
+
+If webhook request fails:
+
+Show message:
+
+"Resume analysis failed. Please try again."
+
+------------------------------------------------
+
+RENDER COLD START HANDLING
+
+Because the webhook server is hosted on Render free tier, the first request may take 20–40 seconds.
+
+Display loading message:
+
+"Analyzing resume. First request may take a few seconds."
+
+------------------------------------------------
+
+FINAL USER FLOW
+
+User uploads resume
+↓
+Pipeline loading UI
+↓
+POST request to webhook
+↓
+n8n workflow processes resume
+↓
+JSON response returned
+↓
+Modal popup appears
+↓
+Top 4 job matches displayed as cards
+↓
+User can click "View Job Openings"

@@ -1,0 +1,113 @@
+Assessment Page
+
+Objective: Build a comprehensive skills assessment platform with three difficulty levels, automated evaluation, and intelligent course recommendations.
+Assessment Levels:
+Level 1: Easy Quiz (5-10 questions)
+
+Google Forms-style quiz interface within the website
+Simple, clean single-page quiz format
+Question types: Multiple choice (4 options each)
+Display one question at a time with "Next" button OR show all questions on one scrollable page
+Progress indicator showing question count (e.g., "Question 3 of 8")
+Submit button at the end
+Auto-graded with instant results
+Minimum 60% to pass
+Show correct/incorrect answers after submission
+
+Level 2: Medium - Practical Implementation (Task Submission)
+
+Display clear task description/requirements in a card
+Specify accepted file formats (e.g., .py, .ipynb, .zip, .pdf)
+File upload interface with drag-and-drop support
+Show uploaded file name and size
+"Submit for Evaluation" button
+After submission, show:
+
+"Submitted successfully" message
+"AI is evaluating your submission..." loading state
+Simulated evaluation results after 2-3 seconds with score breakdown:
+
+Dataset handling: X/15 points
+Methodology/implementation: X/20 points
+Results/accuracy: X/15 points
+Total: X/50 points
+Minimum 60% to pass (30/50)
+
+
+Level 3: Hard - AI Interview (30 points)
+
+5-7 text-based interview questions (technical + behavioral)
+User types answers in text fields
+Simulated AI evaluation of responses
+Scores based on completeness and keywords
+No minimum score (final assessment)
+
+Assessment Flow Logic:
+
+User starts at Level 1 (Easy Quiz)
+Must pass Level 1 to unlock Level 2
+Must pass Level 2 to unlock Level 3
+Track progress and scores throughout
+Can retake failed levels
+
+Results & Analytics:
+After completion, display:
+
+Score summary card for each level
+Performance visualization using Recharts (bar/radar chart)
+Keyword weakness analysis - identify struggling topics
+Color-coded strength indicators:
+
+Red (0-40%): Weak
+Yellow (41-70%): Average
+Green (71-100%): Strong
+
+
+
+Smart Recommendation Engine:
+Generate course recommendations based on performance:
+IF (Quiz Failed OR Easy Level < 60%):
+  → Recommend BEGINNER/FOUNDATIONAL courses
+  
+ELSE IF (Identified weak keywords):
+  → Recommend INTERMEDIATE courses for those specific topics
+  
+ELSE IF (All levels passed):
+  → Recommend ADVANCED/SPECIALIZATION courses
+Display recommendations as course cards showing:
+
+Course title
+Platform name and logo
+Difficulty badge
+Duration estimate
+"Why recommended" tag (e.g., "Improve: Generative AI")
+"Enroll Now" button linking to courses page
+
+Technical Implementation:
+Use these technologies:
+
+React with hooks (useState, useEffect, useReducer)
+Tailwind CSS for all styling
+lucide-react for icons
+Recharts for data visualization
+NO localStorage - use React state only
+
+UI Components Needed:
+
+Progress stepper showing 3 levels
+Countdown timer component
+Question card component
+Code editor interface (textarea with monospace font)
+Results dashboard with charts
+Course recommendation cards
+Modal dialogs for level transitions
+
+Design Guidelines:
+
+Modern, clean interface
+Consistent color scheme across both pages
+Loading states for all async operations
+Success animations when passing levels
+Error states with helpful messages
+Mobile-first responsive design
+Smooth transitions between states
