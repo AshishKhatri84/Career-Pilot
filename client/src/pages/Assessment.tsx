@@ -2270,7 +2270,7 @@ function assessmentReducer(
         ...state,
         level3Answers: action.answers,
         level3Score: action.score,
-        level3Status: "passed",
+        level3Status: action.score >= 60 ? "passed" : "failed",
         currentLevel: 0,
         showResults: true,
       };
@@ -2662,7 +2662,7 @@ export default function Assessment() {
   if (state.showResults) {
     const recommendations = getRecommendations();
     const resultsContext =
-      state.level3Status === "passed"
+      (state.level3Status === "passed" || state.level3Status === "failed")
         ? "interview"
         : state.level2Status === "passed"
           ? "practical"
@@ -2703,7 +2703,7 @@ export default function Assessment() {
               const completedLevels: { label: string; score: number }[] = [];
               if (state.level1Status === "passed" || state.level1Status === "failed") completedLevels.push({ label: "Quiz", score: state.level1Score });
               if (state.level2Status === "passed" || state.level2Status === "failed") completedLevels.push({ label: "Practical", score: state.level2Score });
-              if (state.level3Status === "passed") completedLevels.push({ label: "Interview", score: state.level3Score });
+              if (state.level3Status === "passed" || state.level3Status === "failed") completedLevels.push({ label: "Interview", score: state.level3Score });
               const avgScore = completedLevels.length > 0 ? Math.round(completedLevels.reduce((sum, l) => sum + l.score, 0) / completedLevels.length) : 0;
               return (
                 <Card className="p-6 mb-6 text-center" data-testid="card-overall-score">
@@ -2771,8 +2771,8 @@ export default function Assessment() {
                   <h3 className="font-semibold text-foreground">
                     Level 3: Interview Questions
                   </h3>
-                  <Badge className="bg-green-100 text-green-700">
-                    Complete
+                  <Badge className={state.level3Score >= 60 ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}>
+                    {state.level3Score >= 60 ? "Passed" : "Failed"}
                   </Badge>
                 </div>
                 <p
@@ -3631,9 +3631,9 @@ export default function Assessment() {
                   {activeTrack?.label ?? "your skill"}. Answer by typing or
                   voice — evaluated on concept coverage.
                 </p>
-                {state.level3Status === "passed" && (
-                  <p className="text-sm text-green-600 mb-4">
-                    Score: {state.level3Score}% — Completed!
+                {(state.level3Status === "passed" || state.level3Status === "failed") && (
+                  <p className={`text-sm mb-4 ${state.level3Score >= 60 ? "text-green-600" : "text-red-600"}`}>
+                    Score: {state.level3Score}% — {state.level3Score >= 60 ? "Passed!" : "Failed"}
                   </p>
                 )}
                 <Button
@@ -3649,7 +3649,9 @@ export default function Assessment() {
                     ? "Locked"
                     : state.level3Status === "passed"
                       ? "Retake"
-                      : "Start"}
+                      : state.level3Status === "failed"
+                        ? "Retry"
+                        : "Start"}
                 </Button>
               </Card>
             </div>
