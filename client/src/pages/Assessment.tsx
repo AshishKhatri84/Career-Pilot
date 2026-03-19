@@ -94,9 +94,9 @@ const PLATFORM_URLS: Record<string, string> = {
   Udemy: "https://www.udemy.com/courses/search/?q=",
   edX: "https://www.edx.org/search?q=",
   Pluralsight: "https://www.pluralsight.com/search?q=",
-  "Great Learning": "https://www.mygreatlearning.com/search?query=",
-  Simplilearn: "https://www.simplilearn.com/search?keyword=",
-  upGrad: "https://www.upgrad.com/search/?q=",
+  "Great Learning": "https://www.google.com/search?q=site:mygreatlearning.com+",
+  Simplilearn: "https://www.google.com/search?q=site:simplilearn.com+",
+  upGrad: "https://www.google.com/search?q=site:upgrad.com+",
   "LinkedIn Learning": "https://www.linkedin.com/learning/search?keywords=",
 };
 
@@ -2698,6 +2698,18 @@ export default function Assessment() {
                 Here's your comprehensive performance analysis
               </p>
             </div>
+
+            <Card className="p-6 mb-6 text-center" data-testid="card-overall-score">
+              <p className="text-sm font-medium text-muted-foreground mb-1">Overall Average Score</p>
+              <p className={`text-5xl font-bold mb-2 ${getPerformanceColor(Math.round((state.level1Score + state.level2Score + state.level3Score) / 3))}`} data-testid="text-overall-score">
+                {Math.round((state.level1Score + state.level2Score + state.level3Score) / 3)}%
+              </p>
+              <div className="flex justify-center gap-6 text-sm text-muted-foreground">
+                <span>Quiz: <span className="font-medium text-foreground">{state.level1Score}%</span></span>
+                <span>Practical: <span className="font-medium text-foreground">{state.level2Score}%</span></span>
+                <span>Interview: <span className="font-medium text-foreground">{state.level3Score}%</span></span>
+              </div>
+            </Card>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
               <Card className="p-6">
