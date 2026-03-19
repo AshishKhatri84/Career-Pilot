@@ -2,7 +2,7 @@
 
 ## Overview
 
-Career-Pilot is a full-stack AI-powered career guidance platform. Users upload their resume on the landing page to unlock the app, receive AI-powered job matches via an n8n webhook, search live job listings (powered by Tavily API), explore learning courses, and take multi-level skill assessments. All user data is stored in sessionStorage and cleared on tab close or sign-out.
+Career-Pilot is a full-stack AI-powered career guidance platform. Users upload their resume (PDF or TXT) or type their skills on the landing page to unlock the app. The resume is sent to an n8n webhook for AI-powered job matching. Once matched, users can search live job listings (Tavily API), explore learning courses across 8 platforms, take multi-level skill assessments across 8 tracks, and view their session activity on a profile page. All user data lives in browser `sessionStorage` — nothing is stored server-side.
 
 ## User Preferences
 
@@ -13,142 +13,151 @@ Preferred communication style: Simple, everyday language.
 ### Frontend Architecture
 
 **Framework & Tooling**
-- React with TypeScript for type-safe component development
-- Vite as the build tool and development server for fast HMR and optimized production builds
-- Wouter for lightweight client-side routing (SPA architecture)
-- TanStack Query (React Query) for server state management, caching, and data fetching
+- React 18 with TypeScript
+- Vite as build tool and dev server (HMR enabled)
+- Wouter for lightweight client-side routing
+- TanStack Query v5 for server state management and data fetching
 
 **UI Component System**
-- shadcn/ui component library based on Radix UI primitives
+- shadcn/ui component library (Radix UI primitives)
 - Tailwind CSS for utility-first styling with custom design tokens
-- Component structure follows the "New York" style variant from shadcn
-- Custom CSS variables for theming (light mode primary with blue-purple gradients)
-- Inter font family for all typography
+- Lucide React for icons
+- Recharts for assessment result charts (bar chart + radar chart)
 
 **Design System**
-- Light theme with high contrast ratios for accessibility
-- Blue-purple gradient color scheme for professional, creative branding
-- Consistent spacing primitives using Tailwind's spacing scale
-- Responsive typography scale with mobile-first approach
-- Fixed navigation header with scrolling vertical layout sections
+- Light/dark theme support via CSS variables
+- Blue-purple gradient color scheme for branding
+- Mobile-first responsive layout
+- Sticky navigation header
 
-**State Management Strategy**
-- Server state managed through TanStack Query
-- User profile & activity stored in `UserContext` (backed by sessionStorage keys `careerPilot_profile` and `careerPilot_activity`)
-- Protected routes redirect to `/` when no profile is present
-- Sign-out clears sessionStorage and resets context state
-- Local UI state handled with React hooks
-- Form state management using react-hook-form with Zod validation via @hookform/resolvers
+**State Management**
+- `UserContext` (React Context) — central session state for profile + activity
+- Backed by `sessionStorage` keys: `careerPilot_profile` and `careerPilot_activity`
+- Protected routes (`/career`, `/courses`, `/assessment`, `/profile`) redirect to `/` when no profile exists
+- Sign-out clears sessionStorage and resets context
+- Local UI state via React hooks; form state via react-hook-form + Zod
 
 **Auth / Session Flow**
-- Landing page (`/`) is the authentication gate — resume upload triggers n8n webhook, parses PDF/TXT with pdfjs-dist, stores profile in UserContext
-- Routes `/career`, `/courses`, `/assessment`, `/profile` are protected — redirect to `/` if no profile
-- Navigation shows Career/Courses/Assessment links + profile avatar dropdown only when logged in
-- Activity log tracks: career searches, course topic clicks, assessment level results
+- Landing page `/` is the auth gate — resume upload triggers n8n webhook + PDF parsing, stores profile in UserContext
+- No accounts, no passwords, no server-side session
+- Session ends when the tab is closed (sessionStorage behavior)
+- Activity log tracks: career searches, course topic clicks, assessment level results (pass/fail + score)
 
-**Key Files**
+**Key Frontend Files**
 - `client/src/context/UserContext.tsx` — UserProvider, useUser hook, sessionStorage persistence
 - `client/src/lib/resumeParser.ts` — PDF/TXT extraction (pdfjs-dist) + section parsing
-- `client/src/components/ResumeUpload.tsx` — upload gate, pipeline overlay, results modal
+- `client/src/components/ResumeUpload.tsx` — upload gate, 5-step pipeline overlay, results modal
 - `client/src/components/Navigation.tsx` — conditional nav + profile avatar dropdown
-- `client/src/pages/Profile.tsx` — profile page with skills, resume sections, job matches, activity log
-- `server/tavilyJobs.ts` — live job search via Tavily API
+- `client/src/pages/Career.tsx` — live job search with Tavily API + 4 filters
+- `client/src/pages/Courses.tsx` — 8 platforms × 15 topics = 120 topics, search filter, direct platform links
+- `client/src/pages/Assessment.tsx` — 8 skill tracks × 3 levels (quiz, practical, interview) with useReducer state machine
+- `client/src/pages/Profile.tsx` — profile, resume sections, job matches, activity log
 
 ### Backend Architecture
 
-**Server Framework**
-- Express.js for HTTP server and API routing
-- Node.js runtime with ESM module support
-- TypeScript for type safety across the stack
+**Server**
+- Express.js HTTP server on port 5000
+- TypeScript with ESM modules
+- Vite middleware in development; serves `dist/public` in production
 
-**API Design**
-- RESTful endpoints under `/api` prefix
-- Job listings API with filtering support (search, location, jobType, experienceLevel, minSalary)
-- JSON request/response format
-- Request logging middleware for API endpoints with duration tracking
-- CORS and security headers through Express middleware
+**API Routes** (`server/routes.ts`)
+- `GET /api/jobs` — proxies job search to Tavily API
+- No other persistent API endpoints — all user state is client-side
 
-**Data Storage Strategy**
-- PostgreSQL database with Neon serverless driver for production
-- Drizzle ORM for type-safe database queries and schema management
-- In-memory storage implementation (MemStorage) for development/testing
-- Storage abstraction layer (IStorage interface) allowing swappable implementations
+**Job Search Service** (`server/tavilyJobs.ts`)
+- Accepts: `search`, `location`, `jobType`, `experienceLevel` query params
+- Builds a natural-language query and calls Tavily Search API
+- Formats results: title, company, location, salary (USD + Indian LPA → rupees), apply URL
+- Returns empty array on API error (never crashes)
 
-**Database Schema**
-- Users table: id (UUID), username (unique), password (hashed)
-- Jobs table: comprehensive job listing data including title, company, location, job type, experience level, salary range, requirements, responsibilities, benefits, AI match score, and posting date
-- Schema defined using Drizzle's PostgreSQL table builders
-- Zod schemas generated from Drizzle schemas for runtime validation
+**Storage** (`server/storage.ts`)
+- In-memory `MemStorage` class implementing `IStorage` interface
+- No database used — backend is stateless beyond the current HTTP request
+- All user-relevant data (profile, activity, job matches) stays in client sessionStorage
 
-**Authentication Approach**
-- Session-based authentication using express-session
-- PostgreSQL session store via connect-pg-simple
-- Credentials included in fetch requests for session persistence
-- Password hashing (implementation pending based on schema)
+**Shared Schema** (`shared/schema.ts`)
+- Drizzle ORM schema definitions shared between frontend and backend
+- Zod schemas generated via `drizzle-zod` for runtime validation
 
-### Development & Build Pipeline
+### Assessment System Details
 
-**Development Workflow**
-- Vite middleware mode integrated with Express for seamless dev experience
-- Hot Module Replacement (HMR) for instant client-side updates
-- TypeScript compilation checking without emit (type checking only)
-- Separate dev and production builds with environment-specific configurations
+The Assessment page (`client/src/pages/Assessment.tsx`) is the most complex part of the app.
 
-**Production Build Process**
-- Client: Vite builds optimized static assets to `dist/public`
-- Server: esbuild bundles server code to `dist/index.js` with external packages
-- Static file serving through Express in production mode
-- Environment-based configuration switching (NODE_ENV)
+**State Machine**
+- Managed by `useReducer` with `AssessmentState`
+- Actions: `SELECT_SKILL`, `START_LEVEL`, `SUBMIT_LEVEL1`, `SUBMIT_LEVEL2`, `SUBMIT_LEVEL3`, `RETRY_LEVEL`, `SHOW_RESULTS`, `HIDE_RESULTS`
+- `SELECT_SKILL` resets all state to `initialState`
 
-**Code Quality & Tooling**
-- TypeScript strict mode enabled for maximum type safety
-- Path aliases for clean imports (@/, @shared/, @assets/)
-- ESM module resolution with bundler strategy
-- Source maps for debugging through @jridgewell/trace-mapping
+**8 Skill Tracks**
+Each track defines: label, description, 8 MCQ questions (Level 1), 3 keyword sets (Level 2), 5 interview questions with keyword arrays (Level 3), and course recommendations (beginner/intermediate/advanced).
 
-### External Dependencies
+Tracks: Frontend Development, Backend Development, Data Science & ML, DevOps & Cloud, Cybersecurity, UI/UX Design, Mobile Development, Databases
 
-**UI & Styling Libraries**
-- Radix UI primitives for accessible, unstyled components (accordion, dialog, dropdown, select, tabs, toast, etc.)
-- Tailwind CSS with PostCSS and Autoprefixer for processing
-- class-variance-authority (CVA) for variant-based component styling
-- clsx and tailwind-merge for conditional class name composition
-- Lucide React for consistent icon system
-- embla-carousel-react for image/content carousels
+**Scoring**
+- Level 1 (Quiz): score = (correct / 8) × 100. Pass = ≥ 60%.
+- Level 2 (Practical): keyword match across 3 files (dataset 15pt, methodology 20pt, results 15pt) = max 50pt. Score = (total/50) × 100. Pass = ≥ 60%.
+- Level 3 (Interview): keyword match per question, averaged. Pass = ≥ 60%.
+- All levels show **Passed** or **Failed** badge — Level 3 always opens results page regardless of pass/fail, so users can access mock interview platform recommendations.
 
-**Data & Forms**
-- Zod for schema validation and type inference
-- react-hook-form for performant form state management
-- drizzle-zod for bridging ORM schemas with validation
+**Results View**
+- Overall Average Score — averages only completed/attempted levels (not unstarted ones defaulting to 0)
+- `resultsContext` shows interview prep platforms if Level 3 was attempted (passed OR failed)
+- "View Current Results" button appears after any level is completed
 
-**Development Tools**
-- Replit-specific plugins: runtime error modal, cartographer, dev banner
-- tsx for running TypeScript in development
-- drizzle-kit for database migrations and schema management
+**Platform Course URLs (PLATFORM_URLS)**
+```
+Coursera:         https://www.coursera.org/search?query=
+Udemy:            https://www.udemy.com/courses/search/?q=
+edX:              https://www.edx.org/search?q=
+Pluralsight:      https://www.pluralsight.com/search?q=
+Great Learning:   https://www.mygreatlearning.com/academy/search?keyword=
+Simplilearn:      https://www.simplilearn.com/search?query=
+upGrad:           https://www.upgrad.com/search/?q=
+LinkedIn Learning: https://www.linkedin.com/learning/search?keywords=
+```
+These same URLs are used in both `Assessment.tsx` (PLATFORM_URLS map) and `Courses.tsx` (platform objects).
 
-**Database & Infrastructure**
-- @neondatabase/serverless for PostgreSQL connections
-- connect-pg-simple for session storage in PostgreSQL
-- Database URL configured via environment variables
+### Course Explorer Details
 
-**Utility Libraries**
-- date-fns for date manipulation and formatting
-- nanoid for generating unique identifiers
-- cmdk for command palette/search functionality
+`client/src/pages/Courses.tsx` — 8 platforms × 15 topics = 120 total topics.
+- Topics have 6 categories: tech, business, data, design, cloud, soft
+- Topic click: `window.open(platform.url + encodeURIComponent(topicName.toLowerCase()), "_blank")`
+- Live search filters across all platforms simultaneously
 
-## External Dependencies
+### External Services
 
-**Third-Party Services**
-- Neon Database: Serverless PostgreSQL hosting (configured via DATABASE_URL environment variable)
-- Google Fonts: Inter font family loaded from CDN
+**Tavily Search API**
+- Used for live job search on Career page
+- Requires `TAVILY_API_KEY` environment variable (Replit Secret)
+- If missing, `/api/jobs` returns a 500 error with `{"error":"Failed to fetch live jobs"}`
 
-**Asset Management**
-- Static images stored in `attached_assets/generated_images/` directory
-- Favicon served from public directory
-- Images referenced via Vite alias (@assets/)
+**n8n Webhook**
+- URL: `https://n8n-production-6a89.up.railway.app/webhook/resume-upload`
+- Receives: `{ fileName, fileBase64 }` (POST, JSON)
+- Returns: `{ total_jobs_analyzed, top_matches: [{ job_title, match_percentage, required_skills_present, skill_gaps, overall_assessment }] }`
+- Client-side only — called from `ResumeUpload.tsx`
 
-**Future AI Integration Points**
-- Resume analysis AI service (currently mock/placeholder)
-- Job matching algorithm with AI scoring
-- Skills assessment AI engine
-- Personalized learning path recommendations
+**pdfjs-dist**
+- Client-side PDF text extraction
+- Worker loaded from CDN
+- Used in `client/src/lib/resumeParser.ts`
+
+**Web Speech API**
+- Browser-native voice recording for Level 3 interview answers
+- No external service — gracefully degrades if browser doesn't support it
+
+## Development Notes
+
+- **Never modify** `server/vite.ts`, `vite.config.ts`, or `drizzle.config.ts`
+- **Never edit** `package.json` directly — use the package management tools
+- Both frontend and backend run on **port 5000** via `npm run dev`
+- HMR handles frontend changes automatically; backend changes require workflow restart
+- No database setup needed — the app works entirely with in-memory + sessionStorage
+
+## Environment Variables
+
+| Variable | Required | Description |
+|---|---|---|
+| `TAVILY_API_KEY` | Yes (for job search) | Tavily API key — set in Replit Secrets |
+
+No other environment variables are needed.

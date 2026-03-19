@@ -1,4 +1,4 @@
-# CareerPilot — AI-Powered Career Guidance Platform
+# Career-Pilot — AI-Powered Career Guidance Platform
 
 > A free, session-based career guidance web app that helps you understand your job fit, search live listings, assess your skills, and find the right resources to grow — all without creating an account.
 
@@ -25,7 +25,7 @@
 
 ## Overview
 
-CareerPilot is a full-stack web application built with React (Vite) on the frontend and Express on the backend. Users upload their resume once to unlock the entire app. From that point, they can see which job roles they match best, search live job listings, take structured skill assessments across 8 skill tracks, and explore learning resources on popular platforms.
+Career-Pilot is a full-stack web application built with React (Vite) on the frontend and Express on the backend. Users upload their resume once to unlock the entire app. From that point, they can see which job roles they match best, search live job listings, take structured skill assessments across 8 skill tracks, and explore learning resources on popular platforms.
 
 All user data is stored in browser `sessionStorage` — no database, no accounts, no server-side personal data storage. Everything clears when the tab is closed or the user signs out.
 
@@ -35,7 +35,7 @@ All user data is stored in browser `sessionStorage` — no database, no accounts
 
 ### 1. Resume Upload & AI Job Matching
 
-- Upload a resume as **PDF or TXT** (max 10 MB)
+- Upload a resume as **PDF or TXT** (max 10 MB) or type/paste skills directly
 - The file is sent to an **n8n automation webhook** that runs AI analysis
 - The AI compares your resume against real job roles and returns:
   - A ranked list of top matching roles
@@ -84,6 +84,7 @@ A structured, three-level assessment covering **8 skill tracks**:
 - Pass mark: 60% (5/8 correct)
 - Tracks which categories you answered incorrectly (used for weak-topic identification)
 - After passing, you may view results showing **course recommendations** tailored to your score and weak areas
+- Shows **Passed** or **Failed** badge with score percentage
 
 **Level 2 — Practical Task**
 - Upload a work sample file (code, notebook, SQL script, PDF, etc.)
@@ -92,25 +93,29 @@ A structured, three-level assessment covering **8 skill tracks**:
 - Keyword analysis against the track's expected concepts determines the score
 - Pass mark: 60% (30/50 points)
 - After passing, results show **coding practice platforms** (LeetCode, NeetCode, GeeksforGeeks, CodeChef, Codeforces, HackerRank)
+- Shows **Passed** or **Failed** badge with score percentage
 
 **Level 3 — Interview Questions**
 - 5 written interview questions tailored to the chosen skill track
 - Answers can be typed **or recorded using the browser microphone** (Web Speech API)
 - Word count is displayed per answer
 - Scored based on keyword coverage across expected concepts for each question
+- Pass mark: 60%
+- Shows **Passed** or **Failed** badge with actual score — results page always unlocks regardless of pass/fail so users can access mock interview platform recommendations
 - After completing, results show **mock interview platforms** (Pramp, Interviewing.io, Exponent, ExpertHire, Gainlo, HackerRank Interview Prep)
 
 **Results View**
-- Score cards for all 3 levels (pass/fail + percentage)
+- **Overall Average Score** card at the top — averages only the levels actually completed (not unstarted levels defaulting to 0)
+- Score cards for completed levels with **Passed / Failed** badge and percentage
 - Bar chart (Score Distribution) and radar chart (Performance Radar) for visual analysis
 - Weak topics identified from Level 1 quiz mistakes
-- Context-aware recommendations based on the highest level completed:
-  - After Quiz → Course recommendations
+- Context-aware recommendations based on the highest level attempted:
+  - After Quiz → Course recommendations (Coursera, Udemy, edX, Pluralsight, Simplilearn, etc.)
   - After Practical → Coding practice platforms
-  - After Interview Questions → Mock interview platforms
-- Users can view partial results at any point after completing at least one level via **"View Current Results"**
+  - After Interview Questions → Mock interview platforms (shown even on a failed attempt)
+- **"View Current Results"** button appears after completing at least one level, allowing partial result views
 - Levels are locked until the previous level is passed (Level 2 requires Level 1 pass, Level 3 requires Level 2 pass)
-- All levels can be retaken
+- Dashboard shows live score and status for each level; failed levels can be retried
 
 ---
 
@@ -118,20 +123,20 @@ A structured, three-level assessment covering **8 skill tracks**:
 
 - 8 learning platforms with 15 curated topics each (120 topics total)
 
-| Platform | Focus Area |
-|---|---|
-| Coursera | Data Science, AI, Cloud, Web Dev, Cybersecurity |
-| Udemy | React, Full Stack, AWS, DevOps, JavaScript |
-| Simplilearn | PMP, Data Analytics, Cloud Architecture, Agile |
-| Great Learning | AI Engineering, Data Engineering, Product Management |
-| upGrad | MBA, Data Science Bootcamp, Fintech, UI/UX |
-| edX | Computer Science, Quantum Computing, Robotics, IoT |
-| Pluralsight | .NET, Infrastructure as Code, Terraform, System Design |
-| LinkedIn Learning | Leadership, Career Planning, Soft Skills, Excel |
+| Platform | Search URL Pattern | Focus Area |
+|---|---|---|
+| Coursera | `coursera.org/search?query=` | Data Science, AI, Cloud, Web Dev, Cybersecurity |
+| Udemy | `udemy.com/courses/search/?q=` | React, Full Stack, AWS, DevOps, JavaScript |
+| Simplilearn | `simplilearn.com/search?query=` | PMP, Data Analytics, Cloud Architecture, Agile |
+| Great Learning | `mygreatlearning.com/academy/search?keyword=` | AI Engineering, Data Engineering, Product Management |
+| upGrad | `upgrad.com/search/?q=` | MBA, Data Science Bootcamp, Fintech, UI/UX |
+| edX | `edx.org/search?q=` | Computer Science, Quantum Computing, Robotics, IoT |
+| Pluralsight | `pluralsight.com/search?q=` | .NET, Infrastructure as Code, Terraform, System Design |
+| LinkedIn Learning | `linkedin.com/learning/search?keywords=` | Leadership, Career Planning, Soft Skills, Excel |
 
 - Topics are color-coded by **6 categories**: Technology, Business, Data & AI, Design, Cloud, Soft Skills
 - **Live search** filters topics across all platforms simultaneously
-- Clicking any topic badge **opens the platform's search results** for that topic in a new tab
+- Clicking any topic badge **opens directly on that platform's search results page** for that topic in a new tab
 - All topic clicks are logged to your activity history
 
 ---
@@ -224,7 +229,7 @@ A structured, three-level assessment covering **8 skill tracks**:
 | **Express.js** | HTTP server and API routing |
 | **TypeScript** | Type safety on the server |
 | **tsx** | TypeScript execution for development |
-| **Drizzle ORM** | Database schema definitions and query builder |
+| **Drizzle ORM** | Schema definitions and query builder |
 
 ### Infrastructure
 | Technology | Purpose |
@@ -347,7 +352,7 @@ Registers all API routes:
 - Falls back to an empty result set on API errors
 
 ### Storage (`server/storage.ts`)
-Implements an in-memory storage interface (`MemStorage`). Currently used minimally — no persistent user data is stored server-side by design.
+Implements an in-memory storage interface (`MemStorage`). No persistent user data is stored server-side — all user session data lives in the browser's `sessionStorage`.
 
 ### Shared Schema (`shared/schema.ts`)
 Drizzle ORM schema definitions shared between frontend and backend for type safety. Includes Zod schemas generated via `drizzle-zod`.
@@ -358,7 +363,7 @@ Drizzle ORM schema definitions shared between frontend and backend for type safe
 
 ### Resume Upload Flow
 ```
-User selects file
+User selects file (or types skills)
         │
         ▼
 ResumeUpload.tsx
@@ -402,26 +407,51 @@ Job listings rendered as cards with salary, apply link, badges
 User selects skill track
         │
         ▼
-Level 1 (Quiz) → handleQuizSubmit() → score → logActivity()
-        │ pass (≥60%)
+Level 1 (Quiz) → 8 MCQs → score → Passed (≥60%) or Failed → logActivity()
+        │ pass only
         ▼
-Level 2 (Practical) → handleLevel2Submit() → keyword matching → score → logActivity()
-        │ pass (≥60%)
+Level 2 (Practical) → file upload → keyword scoring → Passed (≥60%) or Failed → logActivity()
+        │ pass only
         ▼
-Level 3 (Interview Questions) → handleLevel3Submit() → keyword matching → score → logActivity()
+Level 3 (Interview) → 5 questions typed/voice → keyword scoring → Passed/Failed → logActivity()
+        │ always shows results page
+        ▼
+Results view — Overall Average Score (completed levels only) + context-aware recommendations:
+  - After Level 1 attempt → Course recommendations (Coursera, Udemy, edX, Simplilearn, etc.)
+  - After Level 2 attempt → Coding practice platforms (LeetCode, NeetCode, GFG, etc.)
+  - After Level 3 attempt → Mock interview platforms (Pramp, Interviewing.io, etc.)
+        │
+        └── "View Current Results" available after any level is completed
+```
+
+### Platform Course Link Flow
+```
+User clicks topic badge on Courses page
         │
         ▼
-Results view with context-aware recommendations:
-  - After Level 1 → Course recommendations (Coursera, Udemy, edX, etc.)
-  - After Level 2 → Coding practice platforms (LeetCode, NeetCode, GFG, etc.)
-  - After Level 3 → Mock interview platforms (Pramp, Interviewing.io, etc.)
+handleTopicClick(platform, topicName)
+        │
+        ├── searchTerm = encodeURIComponent(topicName.toLowerCase())
+        │
+        ├── window.open(platform.url + searchTerm, "_blank")
+        │   Platform URLs:
+        │   • Coursera    → coursera.org/search?query=
+        │   • Udemy       → udemy.com/courses/search/?q=
+        │   • Simplilearn → simplilearn.com/search?query=
+        │   • Great Learning → mygreatlearning.com/academy/search?keyword=
+        │   • upGrad      → upgrad.com/search/?q=
+        │   • edX         → edx.org/search?q=
+        │   • Pluralsight → pluralsight.com/search?q=
+        │   • LinkedIn Learning → linkedin.com/learning/search?keywords=
+        │
+        └── logActivity({ type: "course_click", ... })
 ```
 
 ---
 
 ## Authentication & Session Model
 
-CareerPilot uses a **no-account, session-based model**:
+Career-Pilot uses a **no-account, session-based model**:
 
 | Aspect | Detail |
 |---|---|
@@ -442,8 +472,8 @@ CareerPilot uses a **no-account, session-based model**:
 |---|---|---|
 | `pages/Home.tsx` | `/` | Landing page — hero, about, upload, features, FAQ, footer |
 | `pages/Career.tsx` | `/career` | Live job search with Tavily API |
-| `pages/Courses.tsx` | `/courses` | Course topic explorer by platform |
-| `pages/Assessment.tsx` | `/assessment` | Three-level skill assessment system (8 tracks) |
+| `pages/Courses.tsx` | `/courses` | Course topic explorer by platform (8 platforms, 120 topics) |
+| `pages/Assessment.tsx` | `/assessment` | Three-level skill assessment system (8 tracks, scored pass/fail per level) |
 | `pages/Profile.tsx` | `/profile` | User profile, resume sections, job matches, activity log |
 
 ### Key Components
@@ -453,7 +483,7 @@ CareerPilot uses a **no-account, session-based model**:
 | `components/Hero.tsx` | Landing page hero with animated background and CTA button |
 | `components/ResumeUpload.tsx` | File upload gate with pipeline overlay, results modal, and profile setup |
 | `components/AboutSection.tsx` | Landing page about section |
-| `components/Features.tsx` | Feature cards explaining what CareerPilot does |
+| `components/Features.tsx` | Feature cards explaining what Career-Pilot does |
 | `components/FAQ.tsx` | Accordion FAQ section |
 | `components/Footer.tsx` | Footer with contact info and data privacy note |
 | `context/UserContext.tsx` | Global session state, profile, activity log |
@@ -519,36 +549,36 @@ career-pilot/
 │       ├── pages/
 │       │   ├── Home.tsx              # Landing page
 │       │   ├── Career.tsx            # Live job search
-│       │   ├── Courses.tsx           # Course explorer
+│       │   ├── Courses.tsx           # Course explorer (8 platforms × 15 topics)
 │       │   ├── Assessment.tsx        # Skill assessments (8 tracks, 3 levels)
-│       │   ├── Profile.tsx           # User profile
+│       │   ├── Profile.tsx           # User profile page
 │       │   └── not-found.tsx         # 404 page
-│       └── App.tsx                   # Router + UserProvider
+│       ├── App.tsx                   # Router + providers
+│       └── main.tsx                  # React entry point
 ├── server/
 │   ├── index.ts                      # Express entry point
 │   ├── routes.ts                     # API route registration
-│   ├── tavilyJobs.ts                 # Tavily API integration + salary parser
-│   ├── storage.ts                    # In-memory storage (IStorage)
-│   └── vite.ts                       # Vite dev middleware
+│   ├── tavilyJobs.ts                 # Tavily job search service
+│   ├── storage.ts                    # In-memory storage interface
+│   └── vite.ts                       # Vite dev middleware integration
 ├── shared/
-│   └── schema.ts                     # Drizzle schema + Zod types
-├── public/                           # Static assets
-├── attached_assets/                  # Generated images used in the UI
-├── package.json
-├── vite.config.ts
-├── tailwind.config.ts
-├── tsconfig.json
-└── drizzle.config.ts
+│   └── schema.ts                     # Drizzle schema + Zod types (shared)
+├── public/                           # Static assets (favicon, etc.)
+└── package.json
 ```
 
 ---
 
 ## Key Design Decisions
 
-- **No user accounts**: CareerPilot is intentionally account-free. The resume upload acts as the authentication gate, and all data lives in `sessionStorage`. This reduces friction and avoids storing sensitive personal data on servers.
-- **Client-side PDF parsing**: PDF text extraction happens entirely in the browser using `pdfjs-dist`, so resume content is never sent to our own server — only to the n8n AI webhook for job matching.
-- **n8n for AI processing**: Using n8n as the AI orchestration layer keeps the main Express server lightweight and allows the AI matching logic to be updated independently.
-- **Tavily for live job data**: Rather than maintaining a database of job listings, CareerPilot uses Tavily to fetch current, real-world listings at query time — ensuring results are always fresh.
-- **sessionStorage over localStorage**: Ensures user data is automatically cleared when the browser tab is closed, providing better default privacy.
-- **Context-aware assessment recommendations**: Instead of always showing course links after assessments, the results page adapts — showing courses after the quiz (for learning), coding practice platforms after the practical task (for hands-on improvement), and mock interview platforms after the interview questions (for real-world readiness).
-- **Keyword-based assessment scoring**: The practical and interview question levels use keyword matching rather than AI inference, keeping the assessment fast, offline-capable, and transparent. The quiz uses fixed correct answers for objective scoring.
+| Decision | Rationale |
+|---|---|
+| **sessionStorage over localStorage** | Data is scoped to the tab. Closing the tab = automatic sign-out. No stale data across sessions. |
+| **No server-side user storage** | Privacy-first design. Resume text and job matches never persist on our servers. |
+| **Client-side PDF parsing** | Keeps resume content entirely in the user's browser. Only the base64 content is sent to the n8n webhook for AI analysis. |
+| **n8n webhook for AI analysis** | Decouples the AI processing pipeline from the main app. The webhook can be updated independently without redeploying Career-Pilot. |
+| **Keyword-based Level 2 & 3 scoring** | Deterministic and explainable scoring without requiring a live AI API call per submission. |
+| **Level 3 always shows results** | Interview prep platforms are shown regardless of pass/fail, ensuring users who score below 60% still get directed to the resources they need to improve. |
+| **Average score over completed levels only** | Prevents misleadingly low averages when a user views results after completing only 1 or 2 levels (incomplete levels default to 0 internally). |
+| **Direct platform search URLs** | Every topic badge links directly to the platform's own search results page (not Google), giving users an immediate, relevant course listing on the actual platform. |
+| **In-memory backend storage** | No database configuration required. All meaningful user state lives client-side. The backend is stateless beyond the current request. |
