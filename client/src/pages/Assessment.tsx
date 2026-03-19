@@ -2699,17 +2699,29 @@ export default function Assessment() {
               </p>
             </div>
 
-            <Card className="p-6 mb-6 text-center" data-testid="card-overall-score">
-              <p className="text-sm font-medium text-muted-foreground mb-1">Overall Average Score</p>
-              <p className={`text-5xl font-bold mb-2 ${getPerformanceColor(Math.round((state.level1Score + state.level2Score + state.level3Score) / 3))}`} data-testid="text-overall-score">
-                {Math.round((state.level1Score + state.level2Score + state.level3Score) / 3)}%
-              </p>
-              <div className="flex justify-center gap-6 text-sm text-muted-foreground">
-                <span>Quiz: <span className="font-medium text-foreground">{state.level1Score}%</span></span>
-                <span>Practical: <span className="font-medium text-foreground">{state.level2Score}%</span></span>
-                <span>Interview: <span className="font-medium text-foreground">{state.level3Score}%</span></span>
-              </div>
-            </Card>
+            {(() => {
+              const completedLevels: { label: string; score: number }[] = [];
+              if (state.level1Status === "passed" || state.level1Status === "failed") completedLevels.push({ label: "Quiz", score: state.level1Score });
+              if (state.level2Status === "passed" || state.level2Status === "failed") completedLevels.push({ label: "Practical", score: state.level2Score });
+              if (state.level3Status === "passed") completedLevels.push({ label: "Interview", score: state.level3Score });
+              const avgScore = completedLevels.length > 0 ? Math.round(completedLevels.reduce((sum, l) => sum + l.score, 0) / completedLevels.length) : 0;
+              return (
+                <Card className="p-6 mb-6 text-center" data-testid="card-overall-score">
+                  <p className="text-sm font-medium text-muted-foreground mb-1">Overall Average Score</p>
+                  <p className={`text-5xl font-bold mb-2 ${getPerformanceColor(avgScore)}`} data-testid="text-overall-score">
+                    {avgScore}%
+                  </p>
+                  <div className="flex justify-center gap-6 text-sm text-muted-foreground flex-wrap">
+                    {completedLevels.map((l) => (
+                      <span key={l.label}>{l.label}: <span className="font-medium text-foreground">{l.score}%</span></span>
+                    ))}
+                  </div>
+                  {completedLevels.length < 3 && (
+                    <p className="text-xs text-muted-foreground mt-2">Average across {completedLevels.length} completed level{completedLevels.length > 1 ? "s" : ""}</p>
+                  )}
+                </Card>
+              );
+            })()}
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
               <Card className="p-6">
