@@ -95,7 +95,7 @@ const platforms: Platform[] = [
   },
   {
     name: "Great Learning",
-    url: "https://www.mygreatlearning.com/search?query=",
+    url: "https://www.mygreatlearning.com/academy/search?keyword=",
     icon: <Brain className="w-6 h-6" />,
     color: "from-green-500 to-green-600",
     topics: [
@@ -118,7 +118,7 @@ const platforms: Platform[] = [
   },
   {
     name: "upGrad",
-    url: "https://www.upgrad.com/programs/?search=",
+    url: "https://www.upgrad.com/search/?q=",
     icon: <Laptop className="w-6 h-6" />,
     color: "from-red-500 to-red-600",
     topics: [

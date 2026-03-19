@@ -94,9 +94,9 @@ const PLATFORM_URLS: Record<string, string> = {
   Udemy: "https://www.udemy.com/courses/search/?q=",
   edX: "https://www.edx.org/search?q=",
   Pluralsight: "https://www.pluralsight.com/search?q=",
-  "Great Learning": "https://www.mygreatlearning.com/search?query=",
+  "Great Learning": "https://www.mygreatlearning.com/academy/search?keyword=",
   Simplilearn: "https://www.simplilearn.com/search?query=",
-  upGrad: "https://www.upgrad.com/programs/?search=",
+  upGrad: "https://www.upgrad.com/search/?q=",
   "LinkedIn Learning": "https://www.linkedin.com/learning/search?keywords=",
 };
 
