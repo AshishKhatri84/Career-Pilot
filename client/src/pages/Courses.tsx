@@ -72,7 +72,7 @@ const platforms: Platform[] = [
   },
   {
     name: "Simplilearn",
-    url: "https://www.google.com/search?q=site:simplilearn.com+",
+    url: "https://www.simplilearn.com/search?query=",
     icon: <Award className="w-6 h-6" />,
     color: "from-orange-500 to-orange-600",
     topics: [
@@ -95,7 +95,7 @@ const platforms: Platform[] = [
   },
   {
     name: "Great Learning",
-    url: "https://www.google.com/search?q=site:mygreatlearning.com+",
+    url: "https://www.mygreatlearning.com/search?query=",
     icon: <Brain className="w-6 h-6" />,
     color: "from-green-500 to-green-600",
     topics: [
@@ -118,7 +118,7 @@ const platforms: Platform[] = [
   },
   {
     name: "upGrad",
-    url: "https://www.google.com/search?q=site:upgrad.com+",
+    url: "https://www.upgrad.com/programs/?search=",
     icon: <Laptop className="w-6 h-6" />,
     color: "from-red-500 to-red-600",
     topics: [
