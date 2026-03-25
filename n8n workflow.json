@@ -1,0 +1,682 @@
+{
+  "updatedAt": "2026-03-12T12:37:32.203Z",
+  "createdAt": "2026-03-12T10:25:46.950Z",
+  "id": "wdLygkKsA3yVua7m",
+  "name": "Resume Matcher - Capstone Demo (Stable)",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "resume-upload",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "id": "43b22642-8d0a-4f62-93fe-2f5b712b5b32",
+      "name": "Resume Upload Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -720,
+        96
+      ],
+      "webhookId": "d93ef523-0a95-4e78-88f5-484198ae2143"
+    },
+    {
+      "parameters": {
+        "jsCode": "const base64 = $json.body.fileBase64;\nconst fileName = $json.body.fileName || \"resume.pdf\";\n\nif (!base64) {\n  throw new Error(\"fileBase64 is missing\");\n}\n\nconst buffer = Buffer.from(base64, \"base64\");\n\n// Detect file type\nlet mimeType = \"application/pdf\";\n\nif (fileName.toLowerCase().endsWith(\".txt\")) {\n  mimeType = \"text/plain\";\n}\n\nreturn [{\n  binary: {\n    data: {\n      data: buffer,\n      mimeType: mimeType,\n      fileName: fileName\n    }\n  }\n}];"
+      },
+      "id": "48c0b53b-43ce-4249-b3e5-e1850fc96467",
+      "name": "Convert Base64 to Binary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -544,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {}
+      },
+      "id": "744f0cfd-3aa0-46f6-9dc2-715c6ba8527b",
+      "name": "Extract PDF Text",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        -128,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "fields": {
+          "values": [
+            {
+              "name": "resumeText",
+              "stringValue": "=={{ $json.text }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "afded342-21e1-4e10-811a-86f6a7c491af",
+      "name": "Set Resume Text",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [
+        256,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const allResults = $input.all().map(item => item.json);\n\n// sort highest match first\nallResults.sort((a, b) => b.match_percentage - a.match_percentage);\n\n// take top 4\nconst top4 = allResults.slice(0, 4);\n\nreturn [{\n  json: {\n    total_jobs_analyzed: allResults.length,\n    top_matches: top4\n  }\n}];"
+      },
+      "id": "a632f034-6a1c-4b5f-9fcb-98feea587dbf",
+      "name": "Collect Results",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        832,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{$json}}",
+        "options": {}
+      },
+      "id": "25f332b2-84c7-44e9-a9cf-67274f8e5136",
+      "name": "Return Results",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1008,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const stopWords = [\"with\",\"and\",\"the\",\"for\",\"using\",\"looking\",\"experience\",\"knowledge\"];\n\nconst resume = $json.resumeText.toLowerCase();\nconst jobTitle = $json.title;\nconst jobDescription = $json.description.toLowerCase();\n\nconst keywords = jobDescription\n  .replace(/[^a-zA-Z0-9 ]/g, \"\")\n  .split(\" \")\n  .filter(word => word.length > 3 && !stopWords.includes(word));\n\nconst uniqueKeywords = [...new Set(keywords)];\n\nlet matched = [];\nlet missing = [];\n\nuniqueKeywords.forEach(keyword => {\n  if (resume.includes(keyword)) {\n    matched.push(keyword);\n  } else {\n    missing.push(keyword);\n  }\n});\n\nlet percentage = Math.round((matched.length / uniqueKeywords.length) * 100);\n\nif (percentage > 95) percentage = 95;\nif (percentage < 10) percentage = 10;\n\nlet assessment = \"Moderate fit\";\n\nif (percentage >= 75) {\n  assessment = \"Strong candidate - recommend interview\";\n} else if (percentage >= 50) {\n  assessment = \"Potential fit - recommend phone screen\";\n} else {\n  assessment = \"Limited match - consider skill improvement\";\n}\n\nreturn {\n    job_title: jobTitle,\n    match_percentage: percentage,\n    required_skills_present: matched.slice(0, 6),\n    skill_gaps: missing.slice(0, 6),\n    overall_assessment: assessment\n  };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        640,
+        96
+      ],
+      "id": "fdcd291f-0a6b-4f37-bc1f-beb4aa537f05",
+      "name": "Simulated AI Match"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "2b07ad6d-2867-45e0-96fe-f71d98b2635c",
+              "leftValue": "={{$binary.data.mimeType}}",
+              "rightValue": "=application/pdf",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -352,
+        96
+      ],
+      "id": "0e307a7d-dc0d-4f52-9742-4b15541447e4",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "operation": "text",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        -128,
+        192
+      ],
+      "id": "948520ee-a3e3-41bc-bc70-d2ac16480ae2",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        80,
+        96
+      ],
+      "id": "1bf379ee-519d-4bf8-a15f-87be7e3e5679",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "jsCode": "const resumeText = $json.resumeText;\n\nconst jobs = [\n  {\"title\":\"Machine Learning Engineer\",\"description\":\"Python machine learning TensorFlow PyTorch pandas numpy modeling\"},\n  {\"title\":\"Software Engineer\",\"description\":\"JavaScript Python REST APIs microservices cloud Git testing\"},\n  {\"title\":\"Frontend Developer\",\"description\":\"HTML CSS JavaScript React Vue UI UX responsive design\"},\n  {\"title\":\"Backend Developer\",\"description\":\"Node.js Express REST APIs authentication MongoDB SQL caching\"},\n  {\"title\":\"Data Analyst\",\"description\":\"SQL Excel PowerBI Tableau statistics reporting visualization\"},\n  {\"title\":\"DevOps Engineer\",\"description\":\"Docker Kubernetes CI CD Jenkins AWS Linux scripting\"},\n  {\"title\":\"Cybersecurity Analyst\",\"description\":\"network security firewalls encryption penetration testing SIEM\"},\n  {\"title\":\"Cloud Engineer\",\"description\":\"AWS Azure GCP cloud infrastructure Terraform deployment\"},\n  {\"title\":\"Full Stack Developer\",\"description\":\"React Node MongoDB APIs frontend backend integration\"},\n  {\"title\":\"AI Engineer\",\"description\":\"NLP transformers deep learning LLM training experimentation\"},\n  {\"title\":\"Mobile Developer\",\"description\":\"Flutter React Native Android iOS mobile UI development\"},\n  {\"title\":\"QA Engineer\",\"description\":\"manual testing automation Selenium Cypress debugging\"},\n  {\"title\":\"Database Administrator\",\"description\":\"SQL indexing performance tuning backup recovery\"},\n  {\"title\":\"System Engineer\",\"description\":\"Linux networking troubleshooting monitoring configuration\"},\n  {\"title\":\"UI Designer\",\"description\":\"Figma Adobe XD wireframes prototyping design systems\"},\n  {\"title\":\"Product Manager\",\"description\":\"Agile Scrum roadmap planning stakeholder communication\"},\n  {\"title\":\"Business Analyst\",\"description\":\"requirements documentation process analysis UML stakeholder\"},\n  {\"title\":\"Blockchain Developer\",\"description\":\"Solidity Ethereum smart contracts web3 decentralized cryptography\"},\n  {\"title\":\"Game Developer\",\"description\":\"Unity Unreal C# game physics rendering optimization\"},\n  {\"title\":\"Research Engineer\",\"description\":\"algorithms research experimentation optimization simulation\"}\n];\n\nreturn jobs.map(job => ({\n  json: {\n    title: job.title,\n    description: job.description,\n    resumeText: resumeText\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        96
+      ],
+      "id": "8a1b0873-82c5-44e5-80d1-42d6daf5f78f",
+      "name": "Generate Jobs"
+    }
+  ],
+  "connections": {
+    "Resume Upload Webhook": {
+      "main": [
+        [
+          {
+            "node": "Convert Base64 to Binary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert Base64 to Binary": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract PDF Text": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Resume Text": {
+      "main": [
+        [
+          {
+            "node": "Generate Jobs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect Results": {
+      "main": [
+        [
+          {
+            "node": "Return Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simulated AI Match": {
+      "main": [
+        [
+          {
+            "node": "Collect Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Extract PDF Text",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Set Resume Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Jobs": {
+      "main": [
+        [
+          {
+            "node": "Simulated AI Match",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {},
+  "versionId": "961e0426-0049-466d-b8c7-03368751d9ce",
+  "activeVersionId": "cb1af719-e724-4f27-9561-3a49122f853b",
+  "versionCounter": 198,
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-03-12T10:25:46.950Z",
+      "createdAt": "2026-03-12T10:25:46.950Z",
+      "role": "workflow:owner",
+      "workflowId": "wdLygkKsA3yVua7m",
+      "projectId": "c4r32A3zRoUnaH2Y",
+      "project": {
+        "updatedAt": "2026-03-12T10:25:09.200Z",
+        "createdAt": "2026-03-12T10:23:49.363Z",
+        "id": "c4r32A3zRoUnaH2Y",
+        "name": "Ashish Khatri <44234ashish@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "creatorId": "d0641319-0b25-4950-aaf1-94101e3e7b44"
+      }
+    }
+  ],
+  "tags": [],
+  "parentFolder": null,
+  "activeVersion": {
+    "updatedAt": "2026-03-12T10:26:05.170Z",
+    "createdAt": "2026-03-12T10:25:46.950Z",
+    "versionId": "cb1af719-e724-4f27-9561-3a49122f853b",
+    "workflowId": "wdLygkKsA3yVua7m",
+    "nodes": [
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "resume-upload",
+          "responseMode": "responseNode",
+          "options": {
+            "allowedOrigins": "*"
+          }
+        },
+        "id": "43b22642-8d0a-4f62-93fe-2f5b712b5b32",
+        "name": "Resume Upload Webhook",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2,
+        "position": [
+          -720,
+          96
+        ],
+        "webhookId": "d93ef523-0a95-4e78-88f5-484198ae2143"
+      },
+      {
+        "parameters": {
+          "jsCode": "const base64 = $json.body.fileBase64;\nconst fileName = $json.body.fileName || \"resume.pdf\";\n\nif (!base64) {\n  throw new Error(\"fileBase64 is missing\");\n}\n\nconst buffer = Buffer.from(base64, \"base64\");\n\n// Detect file type\nlet mimeType = \"application/pdf\";\n\nif (fileName.toLowerCase().endsWith(\".txt\")) {\n  mimeType = \"text/plain\";\n}\n\nreturn [{\n  binary: {\n    data: {\n      data: buffer,\n      mimeType: mimeType,\n      fileName: fileName\n    }\n  }\n}];"
+        },
+        "id": "48c0b53b-43ce-4249-b3e5-e1850fc96467",
+        "name": "Convert Base64 to Binary",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          -544,
+          96
+        ]
+      },
+      {
+        "parameters": {
+          "operation": "pdf",
+          "options": {}
+        },
+        "id": "744f0cfd-3aa0-46f6-9dc2-715c6ba8527b",
+        "name": "Extract PDF Text",
+        "type": "n8n-nodes-base.extractFromFile",
+        "typeVersion": 1,
+        "position": [
+          -128,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "fields": {
+            "values": [
+              {
+                "name": "resumeText",
+                "stringValue": "=={{ $json.text }}"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "id": "afded342-21e1-4e10-811a-86f6a7c491af",
+        "name": "Set Resume Text",
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3,
+        "position": [
+          256,
+          96
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "const allResults = $input.all().map(item => item.json);\n\n// sort highest match first\nallResults.sort((a, b) => b.match_percentage - a.match_percentage);\n\n// take top 4\nconst top4 = allResults.slice(0, 4);\n\nreturn [{\n  json: {\n    total_jobs_analyzed: allResults.length,\n    top_matches: top4\n  }\n}];"
+        },
+        "id": "a632f034-6a1c-4b5f-9fcb-98feea587dbf",
+        "name": "Collect Results",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          832,
+          96
+        ]
+      },
+      {
+        "parameters": {
+          "respondWith": "json",
+          "responseBody": "={{$json}}",
+          "options": {}
+        },
+        "id": "25f332b2-84c7-44e9-a9cf-67274f8e5136",
+        "name": "Return Results",
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1,
+        "position": [
+          1008,
+          96
+        ]
+      },
+      {
+        "parameters": {
+          "mode": "runOnceForEachItem",
+          "jsCode": "const stopWords = [\"with\",\"and\",\"the\",\"for\",\"using\",\"looking\",\"experience\",\"knowledge\"];\n\nconst resume = $json.resumeText.toLowerCase();\nconst jobTitle = $json.title;\nconst jobDescription = $json.description.toLowerCase();\n\nconst keywords = jobDescription\n  .replace(/[^a-zA-Z0-9 ]/g, \"\")\n  .split(\" \")\n  .filter(word => word.length > 3 && !stopWords.includes(word));\n\nconst uniqueKeywords = [...new Set(keywords)];\n\nlet matched = [];\nlet missing = [];\n\nuniqueKeywords.forEach(keyword => {\n  if (resume.includes(keyword)) {\n    matched.push(keyword);\n  } else {\n    missing.push(keyword);\n  }\n});\n\nlet percentage = Math.round((matched.length / uniqueKeywords.length) * 100);\n\nif (percentage > 95) percentage = 95;\nif (percentage < 10) percentage = 10;\n\nlet assessment = \"Moderate fit\";\n\nif (percentage >= 75) {\n  assessment = \"Strong candidate - recommend interview\";\n} else if (percentage >= 50) {\n  assessment = \"Potential fit - recommend phone screen\";\n} else {\n  assessment = \"Limited match - consider skill improvement\";\n}\n\nreturn {\n    job_title: jobTitle,\n    match_percentage: percentage,\n    required_skills_present: matched.slice(0, 6),\n    skill_gaps: missing.slice(0, 6),\n    overall_assessment: assessment\n  };"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          640,
+          96
+        ],
+        "id": "fdcd291f-0a6b-4f37-bc1f-beb4aa537f05",
+        "name": "Simulated AI Match"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 3
+            },
+            "conditions": [
+              {
+                "id": "2b07ad6d-2867-45e0-96fe-f71d98b2635c",
+                "leftValue": "={{$binary.data.mimeType}}",
+                "rightValue": "=application/pdf",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals",
+                  "name": "filter.operator.equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          -352,
+          96
+        ],
+        "id": "0e307a7d-dc0d-4f52-9742-4b15541447e4",
+        "name": "If"
+      },
+      {
+        "parameters": {
+          "operation": "text",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.extractFromFile",
+        "typeVersion": 1.1,
+        "position": [
+          -128,
+          192
+        ],
+        "id": "948520ee-a3e3-41bc-bc70-d2ac16480ae2",
+        "name": "Extract from File"
+      },
+      {
+        "parameters": {},
+        "type": "n8n-nodes-base.merge",
+        "typeVersion": 3.2,
+        "position": [
+          80,
+          96
+        ],
+        "id": "1bf379ee-519d-4bf8-a15f-87be7e3e5679",
+        "name": "Merge"
+      },
+      {
+        "parameters": {
+          "jsCode": "const resumeText = $json.resumeText;\n\nconst jobs = [\n  {\"title\":\"Machine Learning Engineer\",\"description\":\"Python machine learning TensorFlow PyTorch pandas numpy modeling\"},\n  {\"title\":\"Software Engineer\",\"description\":\"JavaScript Python REST APIs microservices cloud Git testing\"},\n  {\"title\":\"Frontend Developer\",\"description\":\"HTML CSS JavaScript React Vue UI UX responsive design\"},\n  {\"title\":\"Backend Developer\",\"description\":\"Node.js Express REST APIs authentication MongoDB SQL caching\"},\n  {\"title\":\"Data Analyst\",\"description\":\"SQL Excel PowerBI Tableau statistics reporting visualization\"},\n  {\"title\":\"DevOps Engineer\",\"description\":\"Docker Kubernetes CI CD Jenkins AWS Linux scripting\"},\n  {\"title\":\"Cybersecurity Analyst\",\"description\":\"network security firewalls encryption penetration testing SIEM\"},\n  {\"title\":\"Cloud Engineer\",\"description\":\"AWS Azure GCP cloud infrastructure Terraform deployment\"},\n  {\"title\":\"Full Stack Developer\",\"description\":\"React Node MongoDB APIs frontend backend integration\"},\n  {\"title\":\"AI Engineer\",\"description\":\"NLP transformers deep learning LLM training experimentation\"},\n  {\"title\":\"Mobile Developer\",\"description\":\"Flutter React Native Android iOS mobile UI development\"},\n  {\"title\":\"QA Engineer\",\"description\":\"manual testing automation Selenium Cypress debugging\"},\n  {\"title\":\"Database Administrator\",\"description\":\"SQL indexing performance tuning backup recovery\"},\n  {\"title\":\"System Engineer\",\"description\":\"Linux networking troubleshooting monitoring configuration\"},\n  {\"title\":\"UI Designer\",\"description\":\"Figma Adobe XD wireframes prototyping design systems\"},\n  {\"title\":\"Product Manager\",\"description\":\"Agile Scrum roadmap planning stakeholder communication\"},\n  {\"title\":\"Business Analyst\",\"description\":\"requirements documentation process analysis UML stakeholder\"},\n  {\"title\":\"Blockchain Developer\",\"description\":\"Solidity Ethereum smart contracts web3 decentralized cryptography\"},\n  {\"title\":\"Game Developer\",\"description\":\"Unity Unreal C# game physics rendering optimization\"},\n  {\"title\":\"Research Engineer\",\"description\":\"algorithms research experimentation optimization simulation\"}\n];\n\nreturn jobs.map(job => ({\n  json: {\n    title: job.title,\n    description: job.description,\n    resumeText: resumeText\n  }\n}));"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          448,
+          96
+        ],
+        "id": "8a1b0873-82c5-44e5-80d1-42d6daf5f78f",
+        "name": "Generate Jobs"
+      }
+    ],
+    "connections": {
+      "Resume Upload Webhook": {
+        "main": [
+          [
+            {
+              "node": "Convert Base64 to Binary",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Convert Base64 to Binary": {
+        "main": [
+          [
+            {
+              "node": "If",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Extract PDF Text": {
+        "main": [
+          [
+            {
+              "node": "Merge",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Set Resume Text": {
+        "main": [
+          [
+            {
+              "node": "Generate Jobs",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Collect Results": {
+        "main": [
+          [
+            {
+              "node": "Return Results",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Simulated AI Match": {
+        "main": [
+          [
+            {
+              "node": "Collect Results",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "If": {
+        "main": [
+          [
+            {
+              "node": "Extract PDF Text",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Extract from File",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Extract from File": {
+        "main": [
+          [
+            {
+              "node": "Merge",
+              "type": "main",
+              "index": 1
+            }
+          ]
+        ]
+      },
+      "Merge": {
+        "main": [
+          [
+            {
+              "node": "Set Resume Text",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Generate Jobs": {
+        "main": [
+          [
+            {
+              "node": "Simulated AI Match",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "authors": "Ashish Khatri",
+    "name": "Version cb1af719",
+    "description": "",
+    "autosaved": true,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-03-12T10:26:05.157Z",
+        "id": 1,
+        "workflowId": "wdLygkKsA3yVua7m",
+        "versionId": "cb1af719-e724-4f27-9561-3a49122f853b",
+        "event": "activated",
+        "userId": "d0641319-0b25-4950-aaf1-94101e3e7b44"
+      }
+    ]
+  },
+  "scopes": [
+    "workflow:create",
+    "workflow:delete",
+    "workflow:execute",
+    "workflow:execute-chat",
+    "workflow:list",
+    "workflow:move",
+    "workflow:publish",
+    "workflow:read",
+    "workflow:share",
+    "workflow:unpublish",
+    "workflow:unshare",
+    "workflow:update",
+    "workflow:updateRedactionSetting"
+  ],
+  "checksum": "3b0f12d38a0daef4b9c4211c43bba45dc7f88895ac8a60ba1e6d031cc0ae34a9"
+}
